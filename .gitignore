@@ -1,0 +1,15 @@
+# 凭证与状态文件不入库（含真实 token）
+auths/
+data/
+config.json
+state.json
+.env
+*.log
+
+# 二进制
+dist/
+bin/
+autoclaw2api
+autoclaw-login
+autoclaw-credit
+autoclaw-maintain

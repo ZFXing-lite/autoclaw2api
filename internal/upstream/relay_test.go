@@ -125,8 +125,10 @@ func TestChatRelayBuildReqUsesLastUserText(t *testing.T) {
 	if req.Message != "final now" {
 		t.Errorf("content=%q", req.Message)
 	}
-	if req.Model != "glm-5.2" {
-		t.Errorf("model=%q", req.Model)
+	// relay 通道不再透传后端模型名（glm-* 透传上游会 LLM request failed），
+	// 只回落默认 agent；reasoning_effort 仍透传。
+	if raw, _ := json.Marshal(req); strings.Contains(string(raw), "model") {
+		t.Errorf("relay req should not carry model field: %s", raw)
 	}
 }
 

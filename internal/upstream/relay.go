@@ -50,14 +50,18 @@ func (s *SSEWriter) WriteData(payload string) error {
 type relayChatReq struct {
 	SessionKey string `json:"sessionKey"`
 	Message    string `json:"message"`
-	Model      string `json:"model,omitempty"`
 	Thinking   string `json:"thinking,omitempty"`
 }
 
 // buildRelayChatReq 由 OpenAI 请求体构造 relay 请求：
 //   - sessionKey 取 user 字段（缺省 "main"）
 //   - message = 最后一条 user 消息的纯文本
-//   - model / reasoning_effort 透传
+//   - reasoning_effort → thinking
+//
+// 模型语义（已实测）：agent/send 的 model 字段只认 agent 目标名；把后端模型名
+// （glm-5.3-flash / glm-5.2 / zai_auto 等）透传进去上游直接报 "LLM request failed"。
+// 因此 relay 通道统一回落默认 agent（openclaw），后端模型选择仅由 OpenAI 兼容端点
+// （x-openclaw-model 头）支持；客户端传任何模型名都不再导致上游失败。
 func buildRelayChatReq(body []byte) (*relayChatReq, error) {
 	var obj struct {
 		Model           string `json:"model"`
@@ -95,9 +99,8 @@ func buildRelayChatReq(body []byte) (*relayChatReq, error) {
 	if req.Message == "" {
 		return nil, fmt.Errorf("no user text message found")
 	}
-	if strings.TrimSpace(obj.Model) != "" && !ModelTarget(obj.Model) {
-		req.Model = strings.TrimSpace(obj.Model)
-	}
+	// model 不再透传（见上方注释）：任何客户端模型名都回落默认 agent。
+	// 预留：若未来上游支持 model 字段传后端模型，可放开并加白名单校验。
 	if strings.TrimSpace(obj.ReasoningEffort) != "" {
 		req.Thinking = strings.TrimSpace(obj.ReasoningEffort)
 	}
@@ -721,7 +724,7 @@ func payloadMsg(m map[string]any) string {
 	if m == nil {
 		return "agent request failed (upstream error event, no detail)"
 	}
-	for _, k := range []string{"message", "error", "msg", "detail", "text"} {
+	for _, k := range []string{"message", "error", "msg", "detail", "text", "delta"} {
 		if v, ok := m[k].(string); ok && strings.TrimSpace(v) != "" {
 			return strings.TrimSpace(v)
 		}

@@ -118,12 +118,12 @@ func (h *Handler) status(w http.ResponseWriter, r *http.Request) {
 // ---------------------------------------------------------------------------
 
 // 静态模型表（动态接口失败时的回退）。
+// 注意：仅列 relay 通道实测可用的 agent 目标名。glm-5.3-flash / glm-5.2 / zai_auto
+// 等后端模型名只在沙箱原生 OpenAI 端点启用时经 x-openclaw-model 可用；
+// relay 通道透传这些名字会触发上游 "LLM request failed"，故不列入防客户端误选。
 var staticModels = []map[string]any{
 	{"id": "openclaw", "object": "model", "created": 1787000000, "owned_by": "autoclaw", "context_length": 1000000, "description": "configured default agent"},
 	{"id": "openclaw/default", "object": "model", "created": 1787000000, "owned_by": "autoclaw", "context_length": 1000000, "description": "configured default agent (stable alias)"},
-	{"id": "glm-5.3-flash", "object": "model", "created": 1787000000, "owned_by": "autoclaw", "context_length": 1000000, "description": "provider model via x-openclaw-model"},
-	{"id": "glm-5.2", "object": "model", "created": 1787000000, "owned_by": "autoclaw", "context_length": 1000000, "description": "provider model via x-openclaw-model"},
-	{"id": "zai_auto", "object": "model", "created": 1787000000, "owned_by": "autoclaw", "context_length": 1000000, "description": "zai auto model via x-openclaw-model"},
 }
 
 var dynamicModelsCache struct {

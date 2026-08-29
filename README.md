@@ -147,7 +147,8 @@ AutoClaw 国内区用手机号+短信。海外区支持 Google / Z.AI 的 OAuth 
 `/v1/models` 先尝试从沙箱网关拉取真实 agent 列表，失败回退到静态表：
 - `openclaw`：默认 agent（OpenClaw gateway 的模型名）
 - `openclaw/default` / `openclaw/<agentId>`：指定 agent
-- `glm-5.3-flash` / `glm-5.2` / `zai_auto`：作为后端模型透传（通过 `x-openclaw-model` 请求头/relay `model` 字段）
+
+> **模型名兼容性**：relay 通道不校验模型名——传 `glm-5.3-flash` / `glm-5.2` / `zai_auto` 等任意名称也会**回落默认 agent** 正常回复（不再报错）。后端模型的精确选择只在沙箱原生 OpenAI 端点启用时经 `x-openclaw-model` 头支持；模型列表未列出它们是为了防止客户端误选。
 
 ## 进阶说明
 

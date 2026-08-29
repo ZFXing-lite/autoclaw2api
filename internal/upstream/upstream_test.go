@@ -134,8 +134,9 @@ func TestBuildRelayChatReq(t *testing.T) {
 	if req.Message != "hello world" {
 		t.Errorf("content = %q, want 'hello world'", req.Message)
 	}
-	if req.Model != "glm-5.2" {
-		t.Errorf("model = %q, want glm-5.2", req.Model)
+	// relay 通道不再透传后端模型名（见 buildRelayChatReq 注释）
+	if raw, _ := json.Marshal(req); strings.Contains(string(raw), "model") {
+		t.Errorf("relay req should not carry model field: %s", raw)
 	}
 }
 

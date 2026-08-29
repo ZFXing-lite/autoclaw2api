@@ -81,8 +81,13 @@ Authorization:   Bearer <accessToken>   (需登录的接口)
 
 ## 6. 积分
 
-- `GET /agent-assetmgr/api/v2/wallets?biz_app_id=autoclaw` → `total_balance`（可退 `v1` 钱包接口兜底）。
-- AutoClaw 无每日签到：新用户/活动是一次性奖励，所以调度器只做积分刷新（解冻冷却账号），不做倒计时钟。
+- `GET /agent-assetmgr/api/v2/wallets?biz_app_id=autoclaw` → `total_balance` + `wallets[]`（可退 `v1` 钱包接口兜底）。
+- 钱包分类完整枚举（实测 `v2/wallets` 返回，`display` 表示当前是否可见/有余额）：
+  - `reward` Reward Points：新用户/活动奖励（实测主余额来源，balance=25806）
+  - `daily` Daily Points：每日赠送额度 —— **分类存在但实测 balance=0 且 display=false**，说明每日点数系统自动发放，不靠主动领取
+  - `subscription` / `fuel_pack` / `other`：订阅、加油包、其他（均 0）
+- `GET /agent-assetmgr/api/v1/wallet-instances?wallet_type=all&wallet_scope=daily|monthly|annual`：按 scope 过滤钱包实例，`daily`/`monthly` 返回空 `wallet_instances:[]`、`annual` 有注册奖励实例。
+- **无每日签到**（多路证据）：(1) 16 个候选签到端点（`checkin`/`sign`/`daily-bonus`/`rewards`/`identity-tasks`/`task/list` 变体等）全部 404；(2) daily 钱包余额恒为 0、无任何"可签到"状态；(3) 官方只发一次性奖励（`cycle_key=registration_reward_new_user_task_phase2_registration`）。因此调度器只做积分刷新（解冻冷却账号），不做签到倒计时钟。
 
 ## 7. 海外 OAuth（未内置）
 

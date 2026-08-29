@@ -119,7 +119,7 @@ curl http://127.0.0.1:7865/status
 
 积分刷新：维护日程每 30 分钟拉一次余额，余额恢复后自动解冻被冷却的账号。
 
-> 关于「每日签到」：AutoClaw **没有**“签到点一下领积分”这类端点——`webElectronApi` bundle 里只有钱包查询（`wallet-instances`，其中 `daily` 分类即每日赠送额度 Gift Credits，**系统自动发放、无需主动领取**）和一次性任务（新手 `identity-tasks`、激励中心 `inspiration-task`、推广 `promotion-reward`）。因此本项目不做每日签到任务；每日免费额度到账后，调度器定时拉积分即可自动恢复账号。
+> 关于「每日签到」：AutoClaw **没有**“签到点一下领积分”这类端点（已实测：16 个候选签到端点 `checkin`/`sign`/`daily-bonus`/`rewards`/`identity-tasks` 等全部 404）。钱包系统有 `daily`（每日）分类，但**每日额度由系统自动发放**（当前账号 daily 余额 0 且不展示），不存在主动领取入口；积分主要来自一次性注册奖励。因此本项目不做每日签到任务；额度到账后，调度器定时拉积分即可自动恢复账号。
 
 ## 支持的环境变量覆盖（`AC2A_*`）
 

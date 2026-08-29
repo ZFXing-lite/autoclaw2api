@@ -12,4 +12,7 @@ bin/
 autoclaw2api
 autoclaw-login
 autoclaw-credit
-autoclaw-maintainuploads/
+autoclaw-maintain
+
+# 用户上传的排查/日志等临时文件
+uploads/

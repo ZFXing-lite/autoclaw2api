@@ -719,14 +719,32 @@ func (cv *relayConverter) handleAgent(payload map[string]any) error {
 
 func payloadMsg(m map[string]any) string {
 	if m == nil {
-		return "agent request failed"
+		return "agent request failed (upstream error event, no detail)"
 	}
 	for _, k := range []string{"message", "error", "msg", "detail", "text"} {
 		if v, ok := m[k].(string); ok && strings.TrimSpace(v) != "" {
 			return strings.TrimSpace(v)
 		}
 	}
-	return "agent request failed"
+	// 兜底：把事件类型与 runId 拼进文案，便于定位是哪个请求/哪类失败
+	typ, _ := m["type"].(string)
+	phase, _ := m["phase"].(string)
+	runID, _ := m["runId"].(string)
+	code, _ := m["code"].(string)
+	if typ == "" {
+		typ = "error"
+	}
+	parts := []string{"agent request failed"}
+	if code != "" {
+		parts = append(parts, "code="+code)
+	}
+	if phase != "" {
+		parts = append(parts, "phase="+phase)
+	}
+	if runID != "" {
+		parts = append(parts, "run="+runID)
+	}
+	return strings.Join(parts, " ")
 }
 
 func firstObj(a any, b map[string]any) map[string]any {

@@ -38,6 +38,9 @@ func main() {
 		log.Fatalf("load auths: %v", err)
 	}
 	log.Printf("loaded %d %s account(s) from %s", len(auths), cfg.Region, cfg.AuthDir)
+	if len(auths) == 0 {
+		log.Printf("WARNING: no accounts loaded — run ./login.sh first (or place autoclaw-*.json in %s)", cfg.AuthDir)
+	}
 
 	p := pool.New(cfg.StateFile)
 	defer p.Flush()

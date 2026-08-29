@@ -1,0 +1,23 @@
+{
+  "listen": ":7865",
+  "api_key": "",
+  "auth_dir": "./auths",
+  "state_file": "./data/state.json",
+  "region": "cn",
+  "mode": "auto",
+
+  "cooldown": {
+    "hard_credit": "12h",
+    "soft_rate": "60s",
+    "err_threshold": 3,
+    "err_cooldown": "10m"
+  },
+
+  "upstream": {
+    "timeout_seconds": 120
+  },
+
+  "schedule": {
+    "maintenance_minutes": 30
+  }
+}

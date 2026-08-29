@@ -56,7 +56,7 @@ Authorization:   Bearer <accessToken>   (需登录的接口)
   - 唤醒/状态：`{裸base}/v1/sandboxes/{sandbox_id}/wake`（body `{access_hold_ms, reason, apply_business_busy_cooldown}`）、`/status`。
   - OpenAI 端点：`POST {proxy}/v1/chat/completions`、`GET {proxy}/v1/models`（需网关配置 `chatCompletions` 打开，默认多半是关的）。
   - relay bridge：`POST {proxy}/api/electron/agent/send`（`{"args":[{sessionKey, message, thinking?}]}`，注意 **`message` 必须是字符串**，对象形式返回 `message is required for agent.send`）+ `GET {proxy}/api/events`（SSE）。
-  - **model 字段陷阱（已实测）**：`agent/send` 的 `model` 字段只认 agent 目标名；透传后端模型名（如 `glm-5.3-flash`）上游直接报 `{"type":"error","delta":"LLM request failed."}`。本项目 relay 通道因此**不透传 model**，任何客户端模型名统一回落默认 agent；后端模型选择仅由 OpenAI 端点 `x-openclaw-model` 头支持。
+  - **模型指定方式（已实测）**：`agent/send` 的 body `model` 字段只认 agent 目标名，放后端模型名（如 `glm-5.3-flash`）上游直接报 `{"type":"error","delta":"LLM request failed."}`；**后端模型必须经 HTTP 头 `x-openclaw-model` 指定**（与沙箱 OpenAI 端点同一机制），实测 `glm-5.3-flash` / `glm-5.2` / `zai_auto` 均正常回复。agent 目标名（`openclaw*`）不加头、用 agent 默认模型。
   - `Authorization: Bearer <accessToken>`（幂等：登录返回的 access_token 值本身自带 `Bearer ` 前缀）。
 
 ## 4.1 设备上线必须走 WebSocket（关键）

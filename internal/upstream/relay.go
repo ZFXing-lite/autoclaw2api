@@ -58,10 +58,10 @@ type relayChatReq struct {
 //   - message = 最后一条 user 消息的纯文本
 //   - reasoning_effort → thinking
 //
-// 模型语义（已实测）：agent/send 的 model 字段只认 agent 目标名；把后端模型名
-// （glm-5.3-flash / glm-5.2 / zai_auto 等）透传进去上游直接报 "LLM request failed"。
-// 因此 relay 通道统一回落默认 agent（openclaw），后端模型选择仅由 OpenAI 兼容端点
-// （x-openclaw-model 头）支持；客户端传任何模型名都不再导致上游失败。
+// 模型语义（已实测）：agent/send 的 body model 字段只认 agent 目标名；把后端模型名
+// （glm-5.3-flash / glm-5.2 / zai_auto 等）放进 body model 字段上游直接报
+// "LLM request failed"。后端模型选择须经 HTTP 头 x-openclaw-model 指定（与沙箱
+// OpenAI 端点一致，见 ChatRelay）。agent 目标名（openclaw/*）用默认 agent、不加头。
 func buildRelayChatReq(body []byte) (*relayChatReq, error) {
 	var obj struct {
 		Model           string `json:"model"`
@@ -161,6 +161,9 @@ func (c *Client) ChatRelay(a *auth.Auth, body []byte, out *SSEWriter) error {
 	defer eventsRC.Close()
 
 	// 2) POST agent/send
+	//    后端模型（glm-5.3-flash / glm-5.2 / zai_auto 等）经 x-openclaw-model 头指定
+	//    （与沙箱 OpenAI 端点一致；实测有效）。agent 目标名（openclaw/*）不加头，
+	//    使用 agent 默认模型。注意：把后端模型名放进 body 的 model 字段会被上游拒绝。
 	sendBody, _ := json.Marshal(map[string]any{"args": []any{req}})
 	postReq, err := http.NewRequest(http.MethodPost, base+"/api/electron/agent/send", bytes.NewReader(sendBody))
 	if err != nil {
@@ -172,6 +175,9 @@ func (c *Client) ChatRelay(a *auth.Auth, body []byte, out *SSEWriter) error {
 		}
 	}
 	postReq.Header.Set("Content-Type", "application/json")
+	if xm := requestModelHeader(body); xm != "" {
+		postReq.Header.Set("x-openclaw-model", xm)
+	}
 	data, err := c.doRelayJSON(postReq)
 	if err != nil {
 		return err
@@ -181,6 +187,23 @@ func (c *Client) ChatRelay(a *auth.Auth, body []byte, out *SSEWriter) error {
 	// 3) 消费事件并转换
 	cv := newRelayConverter(runID, req.SessionKey, body, out)
 	return cv.run(eventsRC)
+}
+
+// requestModelHeader 依据 OpenAI 请求体的 model 决定 x-openclaw-model 头值：
+//   - agent 目标名（openclaw*）→ 空（用默认 agent）
+//   - 其他（glm-5.3-flash / glm-5.2 / zai_auto）→ 原值（指定后端模型）
+func requestModelHeader(body []byte) string {
+	var peek struct {
+		Model string `json:"model"`
+	}
+	if json.Unmarshal(body, &peek) != nil {
+		return ""
+	}
+	m := strings.TrimSpace(peek.Model)
+	if m == "" || ModelTarget(m) {
+		return ""
+	}
+	return m
 }
 
 // openDeviceWS 建立并鉴权 WebSocket，使设备上线。

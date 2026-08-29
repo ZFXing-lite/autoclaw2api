@@ -182,3 +182,23 @@ func hasInto(cv *relayConverter, dataLine string) bool {
 	}
 	return cv.handleFrame(f) == nil
 }
+
+// TestRequestModelHeader 验证 x-openclaw-model 头的取值逻辑：
+//
+//	agent 目标名 → 空；后端模型名 → 原值。
+func TestRequestModelHeader(t *testing.T) {
+	cases := []struct{ body, want string }{
+		{`{"model":"openclaw","messages":[]}`, ""},
+		{`{"model":"openclaw/default","messages":[]}`, ""},
+		{`{"model":"openclaw/my-agent","messages":[]}`, ""},
+		{`{"model":"glm-5.3-flash","messages":[]}`, "glm-5.3-flash"},
+		{`{"model":"glm-5.2","messages":[]}`, "glm-5.2"},
+		{`{"model":"zai_auto","messages":[]}`, "zai_auto"},
+		{`{"messages":[]}`, ""},
+	}
+	for _, c := range cases {
+		if got := requestModelHeader([]byte(c.body)); got != c.want {
+			t.Errorf("requestModelHeader(%s)=%q want %q", c.body, got, c.want)
+		}
+	}
+}
